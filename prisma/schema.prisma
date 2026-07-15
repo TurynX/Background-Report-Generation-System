@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ReportType {
+  SALES_SUMMARY
+  USER_ACTIVITY
+  FINANCIAL_AUDIT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  ip        String   @default("Unknown")
+  reports   Report[]
+  sales     Sales[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sales {
+  id          String   @id @default(uuid())
+  userId      String
+  productId   String
+  amount      Decimal  @default(0)
+  quantity    Int      @default(0)  
+  saleDate    DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product     Product  @relation("ProductSales", fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  price       Decimal  @default(0)
+  stock       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sales       Sales[]  @relation("ProductSales")
+}
+
+
+
+model Report {
+  id          String       @id @default(uuid())
+  type        ReportType
+  status      ReportStatus @default(PENDING)
+  filters     Json         
+  fileUrl     String?      
+  errorMessage String?     
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  @@index([userId])
+  @@index([status])
+}
