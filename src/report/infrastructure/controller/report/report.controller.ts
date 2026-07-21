@@ -17,8 +17,15 @@ export class ReportController {
 
   @Post()
   @HttpCode(201)
-  getReport(@Body() body: GetReportDto, @Req() req) {
+  async getReport(@Body() body: GetReportDto, @Req() req) {
     const userId = req.user.sub;
-    return this.getReportUseCase.execute(userId, body);
+    const report = await this.getReportUseCase.execute(userId, body);
+    if (report.fileUrl === null) {
+      return {
+        data: report,
+        message: 'Report is being generated',
+      };
+    }
+    return { data: report, message: 'Report generated successfully' };
   }
 }

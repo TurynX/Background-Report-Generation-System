@@ -76,7 +76,7 @@ export class S3StorageService implements OnModuleInit {
 
     await this.s3Client.send(command);
 
-    const fileUrl = `http://localhost:9000/${this.bucketName}/${fileName}`;
+    const fileUrl = `${process.env.MINIO_ENDPOINT}/${this.bucketName}/${fileName}`;
 
     return { url: fileUrl };
   }
