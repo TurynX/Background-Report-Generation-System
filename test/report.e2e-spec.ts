@@ -92,7 +92,6 @@ describe('ReportController (e2e)', () => {
     expect(res.body.message).toBe('Report generated successfully');
     expect(res.body.data).toHaveProperty('fileUrl');
     expect(res.body.data.fileUrl).toBeDefined();
-    console.log(res.body.data.fileUrl);
   });
 
   afterAll(async () => {
