@@ -1,15 +1,15 @@
 import { ReportStatus, ReportType } from '@prisma/client';
 import { ReportEntity } from './report.repositoriy.entity';
-import { GetReportDto } from '../application/dtos/get-report.dto';
 
 export interface ReportPort {
-  getReport(dto: GetReportDto): Promise<ReportEntity | null>;
   createReport(
     userId: string,
     type: ReportType,
     filters: any,
-    status: ReportStatus,
   ): Promise<ReportEntity>;
+
+  getReportById(reportId: string): Promise<ReportEntity | null>;
+
   updateStatus(
     reportId: string,
     status: ReportStatus,

@@ -4,6 +4,7 @@ import {
   HeadBucketCommand,
   CreateBucketCommand,
   PutBucketPolicyCommand,
+  PutBucketLifecycleConfigurationCommand,
 } from '@aws-sdk/client-s3';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 
@@ -11,6 +12,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 export class S3StorageService implements OnModuleInit {
   private readonly s3Client: S3Client;
   private readonly bucketName: string;
+
   private async ensureBucketExists() {
     try {
       await this.s3Client.send(
@@ -48,6 +50,28 @@ export class S3StorageService implements OnModuleInit {
     );
   }
 
+  private async setLifeCycle() {
+    const comand = new PutBucketLifecycleConfigurationCommand({
+      Bucket: this.bucketName,
+      LifecycleConfiguration: {
+        Rules: [
+          {
+            ID: 'DeleteReportsAfter7days',
+            Status: 'Enabled',
+            Filter: {
+              Prefix: '',
+            },
+            Expiration: {
+              Days: 7,
+            },
+          },
+        ],
+      },
+    });
+
+    await this.s3Client.send(comand);
+  }
+
   constructor() {
     this.bucketName = process.env.BUCKET_NAME!;
     this.s3Client = new S3Client({
@@ -64,6 +88,7 @@ export class S3StorageService implements OnModuleInit {
   async onModuleInit() {
     await this.ensureBucketExists();
     await this.makeBucketPublic();
+    await this.setLifeCycle();
   }
 
   async uploadFile(fileName: string, fileBuffer: Buffer, contentType: string) {

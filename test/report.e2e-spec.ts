@@ -6,6 +6,8 @@ import { AppModule } from '../src/app.module';
 import { PrismaService } from 'src/lib/prisma.service';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { ReportLifeCycleWorker } from 'src/report/application/worker/report-life-cycle.worker';
+import { setTimeout } from 'timers/promises';
 
 dotenv.config({
   path: path.resolve(__dirname, '../.env.test'),
@@ -57,7 +59,7 @@ describe('ReportController (e2e)', () => {
   it('should start generating a sales summary report', async () => {
     const token = await createUser();
     const res = await request(app.getHttpServer())
-      .post('/reports')
+      .post('/reports/create')
       .set('Authorization', `Bearer ${token}`)
       .send({
         type: 'SALES_SUMMARY',
@@ -78,8 +80,8 @@ describe('ReportController (e2e)', () => {
 
   it('should get the generated report with the fileUrl', async () => {
     const token = await createUser();
-    const res = await request(app.getHttpServer())
-      .post('/reports')
+    const createReport = await request(app.getHttpServer())
+      .post('/reports/create')
       .set('Authorization', `Bearer ${token}`)
       .send({
         type: 'SALES_SUMMARY',
@@ -87,11 +89,61 @@ describe('ReportController (e2e)', () => {
       })
       .expect(201);
 
+    let res;
+    for (let i = 0; i < 5; i++) {
+      res = await request(app.getHttpServer())
+        .get(`/reports/getReport/${createReport.body.data.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      if (res.body.data.status === 'COMPLETED') {
+        break;
+      }
+
+      await setTimeout(3000);
+    }
+
     expect(res.body).toHaveProperty('data');
     expect(res.body).toHaveProperty('message');
-    expect(res.body.message).toBe('Report generated successfully');
+    expect(res.body.message).toBe('Report retrieved successfully');
     expect(res.body.data).toHaveProperty('fileUrl');
     expect(res.body.data.fileUrl).toBeDefined();
+    expect(res.body.data.status).toBe('COMPLETED');
+  });
+
+  it('should delete the report after 7 days', async () => {
+    const token = await createUser();
+    const res = await request(app.getHttpServer())
+      .post('/reports/create')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        type: 'SALES_SUMMARY',
+        filters: {},
+      });
+
+    await setTimeout(1000);
+
+    const updatedReport = await db.report.update({
+      where: {
+        id: res.body.data.id,
+      },
+      data: {
+        status: 'COMPLETED',
+        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    console.log(updatedReport);
+
+    const cleanupWorker = app.get(ReportLifeCycleWorker);
+    await cleanupWorker.markExpiredReports();
+
+    const checkReportExpiredDeleted = await request(app.getHttpServer())
+      .get(`/reports/getReport/${res.body.data.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(checkReportExpiredDeleted.body).toHaveProperty('message');
+    expect(checkReportExpiredDeleted.body.message).toBe('Report expired');
   });
 
   afterAll(async () => {
