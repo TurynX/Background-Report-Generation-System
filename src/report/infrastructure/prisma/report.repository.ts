@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ReportStatus, ReportType } from '@prisma/client';
+
 import { ReportPort } from 'src/report/domain/report.repository';
 import { PrismaService } from 'src/lib/prisma.service';
 import { GetReportDto } from 'src/report/application/dtos/get-report.dto';
+import { ReportStatus, ReportType } from '@prisma/client';
 
 @Injectable()
 export class ReportRepository implements ReportPort {
