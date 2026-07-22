@@ -34,6 +34,16 @@ jobs:
           - 9003:9001
         command: server /data --console-address ":9001"
 
+      redis_test:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -72,3 +82,5 @@ jobs:
           BUCKET_ACCESS_KEY: rootadmin
           BUCKET_SECRET_KEY: rootpassword123
           MINIO_ENDPOINT: http://localhost:9002
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
