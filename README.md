@@ -19,10 +19,10 @@ A highly scalable, asynchronous background report generation service built on **
 ```mermaid
 graph TD
     Client[Client / Frontend] -->|1. Request Auth/Report| API[NestJS API Gateway]
-    API -->|2. Queue Job| Redis[(Redis / BullMQ)]
+    API -->|2. Queue Job| Redis[Redis / BullMQ]
     Redis -->|3. Consume Job| Worker[Background Worker]
-    Worker -->|4. Query Data| DB[(PostgreSQL Database)]
-    Worker -->|5. Convert to CSV & Upload| S3[[S3 / MinIO Storage]]
+    Worker -->|4. Query Data| DB[PostgreSQL Database]
+    Worker -->|5. Convert to CSV & Upload| S3[S3 / MinIO Storage]
     Worker -->|6. Update Status & URL| DB
     API -->|7. Query Report Status/Download URL| DB
 ```
