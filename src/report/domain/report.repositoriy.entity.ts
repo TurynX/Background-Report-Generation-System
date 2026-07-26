@@ -8,6 +8,7 @@ export class ReportEntity {
     readonly status: ReportStatus,
     readonly filters: any | null,
     readonly fileUrl: string | null,
+    readonly fileKey: string | null,
     readonly errorMessage: string | null,
     readonly createdAt: Date,
     readonly updatedAt: Date,

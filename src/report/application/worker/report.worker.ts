@@ -61,6 +61,7 @@ export class ReportWorker extends WorkerHost {
         data: {
           status: ReportStatus.COMPLETED,
           fileUrl: uploadedFile.url,
+          fileKey: `${fileName}`,
         },
       });
 

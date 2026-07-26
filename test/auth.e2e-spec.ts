@@ -67,7 +67,19 @@ describe('AuthController (e2e)', () => {
     expect(res.body.data).toHaveProperty('accessToken');
   });
 
-  afterEach(async () => {
+  it('should return 429 if user tries to login more than 5 times in 1 minute', async () => {
+    let res;
+    for (let i = 0; i < 6; i++) {
+      res = await request(app.getHttpServer()).post('/auth/login').send({
+        email: email,
+        password: password,
+      });
+    }
+
+    expect(res.status).toBe(429);
+  });
+
+  afterAll(async () => {
     await app.close();
   });
 });

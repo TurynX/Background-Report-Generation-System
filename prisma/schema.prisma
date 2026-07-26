@@ -63,7 +63,8 @@ model Report {
   type        ReportType
   status      ReportStatus @default(PENDING)
   filters     Json         
-  fileUrl     String?      
+  fileUrl     String?
+  fileKey     String?      
   errorMessage String?     
   userId      String
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)

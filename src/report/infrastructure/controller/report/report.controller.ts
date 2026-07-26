@@ -14,6 +14,7 @@ import { GetReportByIdUseCase } from 'src/report/application/use-cases/get-repor
 import { AuthGuard } from 'src/auth/guard/guard.guard';
 import { CreateReportUseCase } from 'src/report/application/use-cases/create-report.use-case';
 import { ReportStatus } from '@prisma/client';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('reports')
 @UseGuards(AuthGuard)
@@ -23,6 +24,8 @@ export class ReportController {
     private readonly createReportUseCase: CreateReportUseCase,
   ) {}
 
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   async generateReport(@Body() body: GetReportDto, @Req() req) {

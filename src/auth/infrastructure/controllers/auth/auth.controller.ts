@@ -1,7 +1,8 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { LoginDto, RegisterDto } from '../../dtos/auth.dto';
 import { LoginUseCase } from 'src/auth/application/use-cases/login.use-case';
 import { RegisterUseCase } from 'src/auth/application/use-cases/register.use-case';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -17,6 +18,8 @@ export class AuthController {
     return { message: 'User registered successfully', data: response };
   }
 
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(200)
   async login(@Body() dto: LoginDto) {

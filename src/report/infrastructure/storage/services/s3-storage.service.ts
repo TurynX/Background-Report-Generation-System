@@ -5,7 +5,10 @@ import {
   CreateBucketCommand,
   PutBucketPolicyCommand,
   PutBucketLifecycleConfigurationCommand,
+  GetObjectCommand,
+  DeleteBucketCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 
 @Injectable()
@@ -101,8 +104,22 @@ export class S3StorageService implements OnModuleInit {
 
     await this.s3Client.send(command);
 
-    const fileUrl = `${process.env.MINIO_ENDPOINT}/${this.bucketName}/${fileName}`;
+    const fileUrl = `${process.env.BUCKET_ENDPOINT}/${this.bucketName}/${fileName}`;
 
     return { url: fileUrl };
+  }
+
+  async generatePresignedUrl(
+    fileKey: string,
+    expiresInSeconds = 900,
+  ): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: fileKey,
+    });
+
+    return await getSignedUrl(this.s3Client, command, {
+      expiresIn: expiresInSeconds,
+    });
   }
 }

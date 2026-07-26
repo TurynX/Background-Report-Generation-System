@@ -91,23 +91,19 @@ describe('ReportController (e2e)', () => {
 
     let res;
     for (let i = 0; i < 5; i++) {
+      await setTimeout(3000);
+
       res = await request(app.getHttpServer())
         .get(`/reports/getReport/${createReport.body.data.id}`)
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
-
-      if (res.body.data.status === 'COMPLETED') {
-        break;
-      }
-
-      await setTimeout(3000);
     }
 
     expect(res.body).toHaveProperty('data');
     expect(res.body).toHaveProperty('message');
     expect(res.body.message).toBe('Report retrieved successfully');
-    expect(res.body.data).toHaveProperty('fileUrl');
-    expect(res.body.data.fileUrl).toBeDefined();
+    expect(res.body.data).toHaveProperty('url');
+    expect(res.body.data.url).toBeDefined();
     expect(res.body.data.status).toBe('COMPLETED');
   });
 
@@ -133,8 +129,6 @@ describe('ReportController (e2e)', () => {
       },
     });
 
-    console.log(updatedReport);
-
     const cleanupWorker = app.get(ReportLifeCycleWorker);
     await cleanupWorker.markExpiredReports();
 
@@ -144,6 +138,22 @@ describe('ReportController (e2e)', () => {
 
     expect(checkReportExpiredDeleted.body).toHaveProperty('message');
     expect(checkReportExpiredDeleted.body.message).toBe('Report expired');
+  });
+
+  it('should return 429 if user tries to create more than 5 reports in 1 minute', async () => {
+    const token = await createUser();
+    let res;
+    for (let i = 0; i < 6; i++) {
+      res = await request(app.getHttpServer())
+        .post('/reports/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          type: 'SALES_SUMMARY',
+          filters: {},
+        });
+    }
+
+    expect(res.status).toBe(429);
   });
 
   afterAll(async () => {

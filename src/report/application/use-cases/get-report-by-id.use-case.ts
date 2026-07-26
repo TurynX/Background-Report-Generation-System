@@ -12,13 +12,14 @@ import { GetReportDto } from '../dtos/get-report.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ReportLifeCycleWorker } from '../worker/report-life-cycle.worker';
+import { S3StorageService } from 'src/report/infrastructure/storage/services/s3-storage.service';
 
 @Injectable()
 export class GetReportByIdUseCase {
   constructor(
     @Inject(REPORT_PORT)
     private readonly reportRepository: ReportPort,
-    private readonly reportLifeCycleWorker: ReportLifeCycleWorker,
+    private readonly s3Service: S3StorageService,
   ) {}
 
   async execute(reportId: string) {
@@ -32,6 +33,19 @@ export class GetReportByIdUseCase {
       throw new GoneException('Report expired');
     }
 
-    return report;
+    if (!report.fileKey) {
+      throw new NotFoundException('Not provide fileKey');
+    }
+
+    const presignedUrl = await this.s3Service.generatePresignedUrl(
+      report.fileKey,
+    );
+
+    const { fileUrl, ...reportWithoutFileUrl } = report;
+
+    return {
+      ...reportWithoutFileUrl,
+      url: presignedUrl,
+    };
   }
 }
